@@ -1,0 +1,11 @@
+23.108.47.124:80|ocelot:oempg4uvlf
+198.46.213.223:80|ocelot:oempg4uvlf
+198.46.213.204:80|ocelot:oempg4uvlf
+192.3.188.109:80|ocelot:oempg4uvlf
+191.102.154.156:80|ocelot:oempg4uvlf
+172.255.83.214:80|ocelot:oempg4uvlf
+172.255.83.133:80|ocelot:oempg4uvlf
+172.255.83.118:80|ocelot:oempg4uvlf
+172.255.83.106:80|ocelot:oempg4uvlf
+146.148.179.166:80|ocelot:oempg4uvlf
+45.85.66.223:56947|Y5nBnhdM:Ni6xasap
