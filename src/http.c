@@ -26,7 +26,7 @@ bool HTTP_Create(HTTP **http)
 	curl_easy_setopt(curl, CURLOPT_HTTPPROXYTUNNEL, true);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 15L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _WriteFunc);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, NULL);
 
@@ -58,7 +58,7 @@ long HTTP_Request(HTTP *http)
 	CURLcode error = curl_easy_perform(http->curl);
 	if (error)
 	{
-		printf("Curl perform error: %s\n", curl_easy_strerror(error));
+		// printf("Curl perform error: %s\n", curl_easy_strerror(error));
 		return 0;
 	}
 
