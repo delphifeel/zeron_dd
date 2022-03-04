@@ -1,35 +1,24 @@
 import requests
 import json
 
-def parse_proxy_file(fileName):
-	result = ""
-	response = requests.get("https://gitlab.com/cto.endel/atack_api/-/raw/master/proxy/" + fileName)
-	for line in response.text.splitlines():
-		if '@' in line:
-			tokens = line.split("@")
-			result += tokens[0]+ "|" + tokens[1] + "\n"
-		else:
-			tokens = line.split(":")
-			result += tokens[0] + ":" + tokens[1] + "|" + tokens[2] + ":" + tokens[3] + "\n"
-
-	return result
-
 def main():
+	response = requests.get("https://gitlab.com/cto.endel/atack_hosts/-/raw/master/hosts.json")
+	api_list = response.json()
 	proxy_file_content = ""
-	files = [
-		"part1.txt",
-		"part2.txt",
-		"part3.txt",
-		"part4.txt",
-		"part5.txt"
-	]
+	for api in api_list:
+		api_json = None
+		try:
+			api_resp = requests.get(api, timeout=15)
+			api_json = api_resp.json()
+		except:
+			print("%s UNAVAILABLE" % (api))
+			continue
 
-	for fileName in files:
-		proxy_file_content += parse_proxy_file(fileName)
+		for proxy in api_json["proxy"]:
+			proxy_file_content += proxy["ip"].strip() + "|" + proxy["auth"].strip() + "\n"
 
 
 	with open("proxies.txt", "w") as f:
 		f.write(proxy_file_content)
-
 
 main()

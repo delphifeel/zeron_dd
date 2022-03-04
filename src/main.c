@@ -3,12 +3,13 @@
 #include <stdbool.h>
 #include <string.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include "proxy.h"
 #include "http.h"
 
 
-#define THREADS_COUNT 		(500)
+#define THREADS_COUNT 		(100)
 
 static pthread_mutex_t mutex;
 static int thread_proxy_index = 0;
@@ -42,13 +43,14 @@ void *task(void *user_data)
 		{
 			if (http_code != 200)
 			{
-				// printf("ERROR proxy #%ld, code: %ld\n", proxy_index, http_code);
+				printf("ERROR proxy #%ld, code: %ld\n", proxy_index, http_code);
 			}
 			else
 			{
-				printf("good");
+				printf("good\n");
 			}
 		}
+		usleep(100);
 	}
 
 	HTTP_Free(&http);
@@ -119,7 +121,7 @@ int main()
 	HTTP_GLOBAL_INIT();
 	pthread_mutex_init(&mutex, NULL);
 
-	#define PROXY_LIST_SIZE 	(9000)
+	#define PROXY_LIST_SIZE 	(300)
 	proxy_list = malloc(PROXY_LIST_SIZE * sizeof(Proxy));
 	if (proxy_list == NULL)
 	{
