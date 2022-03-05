@@ -5,11 +5,40 @@
 
 #define DEFAULT_LIST_SIZE 	(100)
 
+static bool _ParseLine(char line[], Proxy *proxy)
+{
+	char *ip = strtok(line, "|");
+	char *user_password = strtok(NULL, "|");
+	char *target_site = strtok(NULL, "|");
+
+	if (strlen(ip) > sizeof(proxy->ip) - 1)
+	{
+		printf("Parse line error: ip buffer to small\n");
+		return false;
+	}
+	if (strlen(user_password) > sizeof(proxy->user_password) - 1)
+	{
+		printf("Parse line error: user_password buffer to small\n");
+		return false;
+	}
+	if (strlen(target_site) > sizeof(proxy->target_site) - 1)
+	{
+		printf("Parse line error: target_site buffer to small\n");
+		return false;
+	}
+
+	strcpy(proxy->ip, ip);
+	strcpy(proxy->user_password, user_password);
+	strcpy(proxy->target_site, target_site);
+
+	return true;
+}
+
 bool Proxy_Load(Proxy **proxy_list_ptr, int *proxy_list_size)
 {
 	FILE *fp;
 	int c;
-	char line[256];
+	char line[400];
 	Proxy *proxy;
 	int line_size = 0;
 	unsigned int list_size = 0;
@@ -29,7 +58,7 @@ bool Proxy_Load(Proxy **proxy_list_ptr, int *proxy_list_size)
 
 	while ((c = fgetc(fp)) != EOF) 
 	{
-		if (line_size > 255)
+		if (line_size > sizeof(line) - 1)
 		{
 			printf("Line too big\n");
 			result = false;
@@ -52,25 +81,12 @@ bool Proxy_Load(Proxy **proxy_list_ptr, int *proxy_list_size)
 			proxy = *proxy_list_ptr + list_size;
 			list_size++;
 
-			memset(proxy, 0, sizeof(*proxy));
-
-			line_uspwd_index = strchr(line, '|') - line + 1;
-			if (line_uspwd_index >= sizeof(proxy->ip))
+			line[line_size - 1] = '\0';
+			if (!_ParseLine(line, proxy))
 			{
-				printf("Proxy load error: ip too big\n");
 				result = false;
 				break;
 			}
-			memcpy(proxy->ip, line, line_uspwd_index - 1);
-			if ((line_size - line_uspwd_index) >= sizeof(proxy->user_password))
-			{
-				printf("Proxy load error: uspwd too big\n");
-				result = false;
-				break;
-			}
-			memcpy(proxy->user_password, 
-				   line + line_uspwd_index, 
-				   line_size - line_uspwd_index - 1);
 
 			line_size = 0;
 		}

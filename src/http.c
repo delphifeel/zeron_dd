@@ -33,7 +33,7 @@ static void _AddHeader(const char *key, const char *value)
 
 static void _InitHeaders()
 {
-	_AddHeader("Content-Type", "application/json");
+	_AddHeader("Content-Type", "text/plain;charset=UTF-8");
 	_AddHeader("cf-visitor", "https");
 	_AddHeader("User-Agent", UserAgent_SelectRandom());
 	_AddHeader("Connection", "keep-alive");
@@ -41,7 +41,6 @@ static void _InitHeaders()
 	_AddHeader("Accept-Language", "ru");
 	_AddHeader("x-forwarded-proto", "https");
 	_AddHeader("Accept-Encoding", "gzip, deflate, br");
-
 }
 
 void HTTP_ModuleInit()
@@ -75,7 +74,8 @@ bool HTTP_Create(HTTP **http_ptr, unsigned int id)
 	curl_easy_setopt(curl, CURLOPT_HTTPPROXYTUNNEL, true);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 4L);
+	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 15L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _WriteFunc);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, NULL);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, _headers_list);
@@ -96,10 +96,12 @@ bool HTTP_SetURL(HTTP *http, const char *url)
 {
 	curl_easy_setopt(http->curl, CURLOPT_URL, url);
 
-	/*if (strncmp(url, "https", 5) == 0)
+	#if 1
+	if (strncmp(url, "https", 5) == 0)
 	{
-		curl_easy_setopt(curl, CURLOPT_PROXYTYPE, CURLPROXY_HTTPS);
-	}*/
+		curl_easy_setopt(http->curl, CURLOPT_PROXYTYPE, CURLPROXY_HTTPS);
+	}
+	#endif
 
 	return true;
 }
@@ -116,19 +118,21 @@ long HTTP_Request(HTTP *http)
 	struct curl_slist *cookies = NULL;
 	long response_code;
 	CURLcode error;
+	char *url;
 
 
+	curl_easy_getinfo(http->curl, CURLINFO_EFFECTIVE_URL, &url);
 	error = curl_easy_perform(http->curl);
 	if (error)
 	{
 		if (http->is_verbose)
-			printf("Request error: %s\n", curl_easy_strerror(error));
+			printf("[%s] ERROR: %s\n", url, curl_easy_strerror(error));
 		return 0;
 	}
 	
 	curl_easy_getinfo(http->curl, CURLINFO_RESPONSE_CODE, &response_code);
 	if (http->is_verbose)
-		printf("Request success - http code: %ld\n", response_code);
+		printf("[%s] SUCCESS: http code: %ld\n", url, response_code);
 
     error = curl_easy_getinfo(http->curl, CURLINFO_COOKIELIST, &cookies);
     if (error)

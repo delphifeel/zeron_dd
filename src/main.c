@@ -15,7 +15,7 @@ static pthread_mutex_t 	mutex;
 static int 				thread_proxy_index = 0;
 static Proxy 			*proxy_list;
 static int 				proxy_list_size = 0;
-static unsigned char 	proxy_failed[12000];
+static unsigned char 	*proxy_failed;
 
 void *task(void *userdata)
 {
@@ -28,7 +28,7 @@ void *task(void *userdata)
 
 	id = (int) userdata;
 	HTTP_Create(&http, id);
-	#if 0
+	#if 1
 	HTTP_SetVerbose(http, true);
 	#endif
 	while (1)
@@ -37,41 +37,28 @@ void *task(void *userdata)
 
 		if (thread_proxy_index >= proxy_list_size)
 		{
-			printf("FROM START\n");
 			thread_proxy_index = 0;
+			usleep(100);
 		}
 
 		proxy_index = thread_proxy_index;
 		thread_proxy_index++;
 		pthread_mutex_unlock(&mutex);
 
-		if (proxy_failed[proxy_index] > 2)
+		if (proxy_failed[proxy_index] > 4)
 		{
 			continue;
 		}
 
 		proxy = &proxy_list[proxy_index];
-		HTTP_SetURL(http, "tektorg.ru");
-		HTTP_SetProxy(http, proxy->ip, proxy->user_password);
+		HTTP_SetURL(http, proxy->target_site);
 		http_code = HTTP_Request(http);
-		if (http_code)
+		if ((http_code == 0) || (http_code >= 300))
 		{
-			#if 1
-			if (http_code != 200)
-			{
-				printf("ERROR proxy #%d, code: %ld\n", proxy_index, http_code);
-			}
-			else
-			{
-				printf("good\n");
-			}
-			#endif
+			HTTP_SetProxy(http, proxy->ip, proxy->user_password);
 		}
-		else
-		{
-			proxy_failed[proxy_index]++;
-		}
-		usleep(100);
+
+		usleep(20);
 	}
 
 	HTTP_Free(&http);
@@ -146,7 +133,6 @@ int main(void)
 
 
 	HTTP_ModuleInit();
-	memset(proxy_failed, 0, sizeof(proxy_failed));
 	pthread_mutex_init(&mutex, NULL);
 
 	if (!Proxy_Load(&proxy_list, &proxy_list_size))
@@ -155,6 +141,8 @@ int main(void)
 		return 1;
 	}
 	printf("Read %d proxy\n", proxy_list_size);
+	proxy_failed = malloc(proxy_list_size * sizeof(*proxy_failed));
+
 	printf("Start threads\n");
 	for (i = 0; i < THREADS_COUNT; i++)
 	{

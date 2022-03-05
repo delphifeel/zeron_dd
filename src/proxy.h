@@ -7,6 +7,7 @@ typedef struct Proxy
 {
 	char ip[80];
 	char user_password[80];
+	char target_site[80];
 } Proxy;
 
 bool Proxy_Load(Proxy **proxy_list_ptr,
