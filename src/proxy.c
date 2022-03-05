@@ -3,38 +3,58 @@
 #include <string.h>
 #include "proxy.h"
 
-bool Proxy_Load(Proxy proxy_list[], int proxy_list_max_size, int *proxy_list_size)
+#define DEFAULT_LIST_SIZE 	(100)
+
+bool Proxy_Load(Proxy **proxy_list_ptr, int *proxy_list_size)
 {
+	FILE *fp;
 	int c;
 	char line[256];
 	Proxy *proxy;
 	int line_size = 0;
-	FILE *fp = fopen("../proxy_parser/proxies.txt", "r");
+	unsigned int list_size = 0;
+	bool result = true;
+	unsigned int line_uspwd_index;
+    unsigned int proxy_list_cap = DEFAULT_LIST_SIZE;
+
+
+	fp = fopen("../proxy_parser/proxies.txt", "r");
 	if (fp == NULL)
 	{
 		printf("Cant open proxy file\n");
 		return false;
 	}
-	int list_size = 0;
-	bool result = true;
+
+	*proxy_list_ptr = malloc(proxy_list_cap * sizeof(Proxy));
 
 	while ((c = fgetc(fp)) != EOF) 
 	{
 		if (line_size > 255)
 		{
 			printf("Line too big\n");
-			return false;
+			result = false;
+			break;
 		}
 		line[line_size++] = c;
 		if (c == '\n')
 		{
-			// parse line
-			proxy = proxy_list + list_size;
+            if (list_size == proxy_list_cap)
+            {
+                proxy_list_cap *= 2;
+                *proxy_list_ptr = realloc(*proxy_list_ptr, proxy_list_cap * sizeof(Proxy));
+                if (*proxy_list_ptr == NULL)
+                {
+                    printf("OOM Proxy_Load\n");
+                    exit(1);
+                }
+            }
+
+			proxy = *proxy_list_ptr + list_size;
 			list_size++;
 
 			memset(proxy, 0, sizeof(*proxy));
 
-			int line_uspwd_index = strchr(line, '|') - line + 1;
+			line_uspwd_index = strchr(line, '|') - line + 1;
 			if (line_uspwd_index >= sizeof(proxy->ip))
 			{
 				printf("Proxy load error: ip too big\n");
@@ -48,19 +68,18 @@ bool Proxy_Load(Proxy proxy_list[], int proxy_list_max_size, int *proxy_list_siz
 				result = false;
 				break;
 			}
-			memcpy(proxy->user_password, line + line_uspwd_index, line_size - line_uspwd_index - 1);
-
-			if (list_size == proxy_list_max_size)
-			{
-				printf("Proxy load error: proxy list is too small\n");
-				result = false;
-				break;
-			}
+			memcpy(proxy->user_password, 
+				   line + line_uspwd_index, 
+				   line_size - line_uspwd_index - 1);
 
 			line_size = 0;
 		}
 	}
 
+    if (result == false)
+    {
+        free(*proxy_list_ptr);
+    }
 	*proxy_list_size = list_size;
 	fclose(fp);
 	return result;
