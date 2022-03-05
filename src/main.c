@@ -9,12 +9,13 @@
 #include "http.h"
 
 
-#define THREADS_COUNT 		(100)
+#define THREADS_COUNT 		(300)
 
 static pthread_mutex_t 	mutex;
 static int 				thread_proxy_index = 0;
 static Proxy 			*proxy_list;
 static int 				proxy_list_size = 0;
+static unsigned char 	proxy_failed[12000];
 
 void *task(void *userdata)
 {
@@ -36,12 +37,18 @@ void *task(void *userdata)
 
 		if (thread_proxy_index >= proxy_list_size)
 		{
+			printf("FROM START\n");
 			thread_proxy_index = 0;
 		}
 
 		proxy_index = thread_proxy_index;
 		thread_proxy_index++;
 		pthread_mutex_unlock(&mutex);
+
+		if (proxy_failed[proxy_index] > 2)
+		{
+			continue;
+		}
 
 		proxy = &proxy_list[proxy_index];
 		HTTP_SetURL(http, "tektorg.ru");
@@ -59,6 +66,10 @@ void *task(void *userdata)
 				printf("good\n");
 			}
 			#endif
+		}
+		else
+		{
+			proxy_failed[proxy_index]++;
 		}
 		usleep(100);
 	}
@@ -135,6 +146,7 @@ int main(void)
 
 
 	HTTP_ModuleInit();
+	memset(proxy_failed, 0, sizeof(proxy_failed));
 	pthread_mutex_init(&mutex, NULL);
 
 	if (!Proxy_Load(&proxy_list, &proxy_list_size))
