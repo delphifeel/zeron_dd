@@ -14,8 +14,9 @@ def main():
 			print("%s UNAVAILABLE" % (api))
 			continue
 
-		for proxy in api_json["proxy"]:
-			proxy_file_content += proxy["ip"].strip() + "|" + proxy["auth"].strip() + "\n"
+		if "proxy" in api_json:
+			for proxy in api_json["proxy"]:
+				proxy_file_content += proxy["ip"].strip() + "|" + proxy["auth"].strip() + "\n"
 
 
 	with open("proxies.txt", "w") as f:

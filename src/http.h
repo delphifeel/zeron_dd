@@ -13,7 +13,7 @@ typedef struct HTTP
 void HTTP_ModuleInit();
 void HTTP_ModuleFree();
 
-bool HTTP_Create(HTTP **http_ptr);
+bool HTTP_Create(HTTP **http_ptr, unsigned int id);
 void HTTP_SetVerbose(HTTP *http, bool is_verbose);
 bool HTTP_SetURL(HTTP *http, const char *url);
 bool HTTP_SetProxy(HTTP *http, const char *proxy_ip, const char *proxy_user_password);

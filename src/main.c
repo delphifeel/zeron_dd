@@ -22,11 +22,14 @@ void *task(void *userdata)
 	HTTP *http;
 	unsigned int proxy_index;
 	long http_code;
+	int id;
 
 
-	(void) userdata;
-	HTTP_Create(&http);
+	id = (int) userdata;
+	HTTP_Create(&http, id);
+	#if 0
 	HTTP_SetVerbose(http, true);
+	#endif
 	while (1)
 	{
 		pthread_mutex_lock(&mutex);
@@ -41,19 +44,21 @@ void *task(void *userdata)
 		pthread_mutex_unlock(&mutex);
 
 		proxy = &proxy_list[proxy_index];
-		HTTP_SetURL(http, "1c.ru");
+		HTTP_SetURL(http, "tektorg.ru");
 		HTTP_SetProxy(http, proxy->ip, proxy->user_password);
 		http_code = HTTP_Request(http);
 		if (http_code)
 		{
-			/*if (http_code != 200)
+			#if 1
+			if (http_code != 200)
 			{
 				printf("ERROR proxy #%d, code: %ld\n", proxy_index, http_code);
 			}
 			else
 			{
 				printf("good\n");
-			}*/
+			}
+			#endif
 		}
 		usleep(100);
 	}
@@ -141,7 +146,7 @@ int main(void)
 	printf("Start threads\n");
 	for (i = 0; i < THREADS_COUNT; i++)
 	{
-		pthread_create(threads_list + i, NULL, task, NULL);
+		pthread_create(threads_list + i, NULL, task, (void *) i);
 	}
 
 	for (i = 0; i < THREADS_COUNT; i++)

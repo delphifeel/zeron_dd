@@ -55,12 +55,14 @@ void HTTP_ModuleFree()
 	curl_slist_free_all(_headers_list);
 }
 
-bool HTTP_Create(HTTP **http_ptr)
+bool HTTP_Create(HTTP **http_ptr, unsigned int id)
 {
 	HTTP *http;
 	CURL *curl;
+	char cookie_file[80];
 
 
+	sprintf(cookie_file, "%d.txt", id);
 	*http_ptr = malloc(sizeof(HTTP));
 	http = *http_ptr;
 	curl = curl_easy_init();
@@ -73,10 +75,12 @@ bool HTTP_Create(HTTP **http_ptr)
 	curl_easy_setopt(curl, CURLOPT_HTTPPROXYTUNNEL, true);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 4L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _WriteFunc);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, NULL);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, _headers_list);
+	curl_easy_setopt(curl, CURLOPT_COOKIEFILE, cookie_file);
+	curl_easy_setopt(curl, CURLOPT_COOKIEJAR, cookie_file);
 
 	http->curl = curl;
 	http->is_verbose = false;
@@ -109,6 +113,7 @@ bool HTTP_SetProxy(HTTP *http, const char *proxy_ip, const char *proxy_user_pass
 
 long HTTP_Request(HTTP *http)
 {
+	struct curl_slist *cookies = NULL;
 	long response_code;
 	CURLcode error;
 
@@ -124,6 +129,15 @@ long HTTP_Request(HTTP *http)
 	curl_easy_getinfo(http->curl, CURLINFO_RESPONSE_CODE, &response_code);
 	if (http->is_verbose)
 		printf("Request success - http code: %ld\n", response_code);
+
+    error = curl_easy_getinfo(http->curl, CURLINFO_COOKIELIST, &cookies);
+    if (error)
+    {
+    	if (http->is_verbose)
+			printf("Get cookie error: %s\n", curl_easy_strerror(error));
+		return 0;
+    }
+
 	return response_code;
 }
 
