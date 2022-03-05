@@ -8,6 +8,7 @@ add_executable(ZeronDD
 	src/main.c
 	src/proxy.c
 	src/http.c
+	src/user-agent.c
 )
 target_compile_options(ZeronDD PRIVATE
 	$<$<NOT:$<CONFIG:RELEASE>>:

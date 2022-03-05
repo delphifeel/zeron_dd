@@ -4,13 +4,14 @@
 #include <stdbool.h>
 #include "curl/curl.h"
 
-#define HTTP_GLOBAL_INIT() 		(curl_global_init(CURL_GLOBAL_ALL))
-
 typedef struct HTTP
 {
 	CURL *curl;
 	bool is_verbose;
 } HTTP;
+
+void HTTP_ModuleInit();
+void HTTP_ModuleFree();
 
 bool HTTP_Create(HTTP **http_ptr);
 void HTTP_SetVerbose(HTTP *http, bool is_verbose);

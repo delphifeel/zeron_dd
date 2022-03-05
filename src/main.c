@@ -41,8 +41,8 @@ void *task(void *userdata)
 		pthread_mutex_unlock(&mutex);
 
 		proxy = &proxy_list[proxy_index];
-		HTTP_SetURL(http, "google.com");
-		HTTP_SetProxy(http, proxy->ip, proxy->user_password); 
+		HTTP_SetURL(http, "1c.ru");
+		HTTP_SetProxy(http, proxy->ip, proxy->user_password);
 		http_code = HTTP_Request(http);
 		if (http_code)
 		{
@@ -129,7 +129,7 @@ int main(void)
 	pthread_t threads_list[THREADS_COUNT];
 
 
-	HTTP_GLOBAL_INIT();
+	HTTP_ModuleInit();
 	pthread_mutex_init(&mutex, NULL);
 
 	if (!Proxy_Load(&proxy_list, &proxy_list_size))
@@ -151,5 +151,7 @@ int main(void)
 
 	pthread_mutex_destroy(&mutex);
 	free(proxy_list);
+	HTTP_ModuleFree();
+	
 	return 0;
 }

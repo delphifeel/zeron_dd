@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "http.h"
+#include "user-agent.h"
+
+static struct curl_slist *_headers_list = NULL;
 
 static size_t _WriteFunc(char *ptr, size_t size, size_t nmemb, void *userdata)
 {
@@ -12,6 +16,43 @@ static size_t _WriteFunc(char *ptr, size_t size, size_t nmemb, void *userdata)
 	 printf("userdata: %ld\n", userdata);*/
 
 	return nmemb * size;
+}
+
+static void _AddHeader(const char *key, const char *value)
+{
+	char buffer[400];
+
+
+	memset(buffer, 0, sizeof(buffer));
+	strcat(buffer, key);
+	strcat(buffer, ": ");
+	strcat(buffer, value);
+
+	_headers_list = curl_slist_append(_headers_list, buffer);
+}
+
+static void _InitHeaders()
+{
+	_AddHeader("Content-Type", "application/json");
+	_AddHeader("cf-visitor", "https");
+	_AddHeader("User-Agent", UserAgent_SelectRandom());
+	_AddHeader("Connection", "keep-alive");
+	_AddHeader("Accept", "application/json, text/plain, */*");
+	_AddHeader("Accept-Language", "ru");
+	_AddHeader("x-forwarded-proto", "https");
+	_AddHeader("Accept-Encoding", "gzip, deflate, br");
+
+}
+
+void HTTP_ModuleInit()
+{
+	curl_global_init(CURL_GLOBAL_ALL);
+	_InitHeaders();
+}
+
+void HTTP_ModuleFree()
+{
+	curl_slist_free_all(_headers_list);
 }
 
 bool HTTP_Create(HTTP **http_ptr)
@@ -35,6 +76,7 @@ bool HTTP_Create(HTTP **http_ptr)
 	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _WriteFunc);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, NULL);
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, _headers_list);
 
 	http->curl = curl;
 	http->is_verbose = false;
