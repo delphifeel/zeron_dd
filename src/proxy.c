@@ -5,6 +5,29 @@
 
 #define DEFAULT_LIST_SIZE 	(100)
 
+static bool _ParseTarget(char **target_site_ptr, int target_site_size)
+{
+	int i;
+	char *result = *target_site_ptr;
+
+
+	for (i = 0; i < 7; i++)
+	{
+		if (result[i] == '/')
+		{
+			result += i + 2;
+			break;
+		}
+	}
+
+	if ((*target_site_ptr)[target_site_size - 1] == '/')
+	{
+		(*target_site_ptr)[target_site_size - 1] = '\0';
+	}
+
+	*target_site_ptr = result;
+}
+
 static bool _ParseLine(char line[], Proxy *proxy)
 {
 	char *ip = strtok(line, "|");
@@ -26,6 +49,7 @@ static bool _ParseLine(char line[], Proxy *proxy)
 		printf("Parse line error: target_site buffer to small\n");
 		return false;
 	}
+	_ParseTarget(&target_site, strlen(target_site));
 
 	strcpy(proxy->ip, ip);
 	strcpy(proxy->user_password, user_password);
