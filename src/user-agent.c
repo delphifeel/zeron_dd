@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <time.h>
 #include "user-agent.h"
 
 static char *_user_agents[500] = {

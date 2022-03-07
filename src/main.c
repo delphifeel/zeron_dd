@@ -2,11 +2,19 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <pthread.h>
+#include "pthread.h"
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 
 #include "proxy.h"
 #include "http.h"
+
+#ifdef _WIN32
+#define usleep 	Sleep
+#endif
 
 static pthread_mutex_t 	mutex;
 static int 				thread_proxy_index = 0;
@@ -66,7 +74,7 @@ void *task(void *userdata)
 				if (proxy_failed[proxy_index] > 0)
 					proxy_failed[proxy_index]--;
 			)
-			printf("[%s] SUCCESS\n", proxy->target_site);
+			 printf("[%s][%d] SUCCESS\n", proxy->target_site, proxy_index);
 		}
 
 		usleep(20);
