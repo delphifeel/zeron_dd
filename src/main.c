@@ -29,7 +29,7 @@ void *task(void *userdata)
 	id = (int) userdata;
 	HTTP_Create(&http, id);
 	#if 1
-	HTTP_SetVerbose(http, true);
+	HTTP_SetVerbose(http, false);
 	#endif
 	while (1)
 	{
@@ -56,6 +56,10 @@ void *task(void *userdata)
 		if ((http_code == 0) || (http_code >= 300))
 		{
 			HTTP_SetProxy(http, proxy->ip, proxy->user_password);
+		}
+		else
+		{
+			printf("[%s] SUCCESS\n", proxy->target_site);
 		}
 
 		usleep(20);
