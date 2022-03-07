@@ -74,8 +74,7 @@ bool HTTP_Create(HTTP **http_ptr, unsigned int id)
 	curl_easy_setopt(curl, CURLOPT_HTTPPROXYTUNNEL, true);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
-	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 15L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _WriteFunc);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, NULL);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, _headers_list);
@@ -96,7 +95,7 @@ bool HTTP_SetURL(HTTP *http, const char *url)
 {
 	curl_easy_setopt(http->curl, CURLOPT_URL, url);
 
-	#if 1
+	#if 0
 	if (strncmp(url, "https", 5) == 0)
 	{
 		curl_easy_setopt(http->curl, CURLOPT_PROXYTYPE, CURLPROXY_HTTPS);
@@ -115,10 +114,10 @@ bool HTTP_SetProxy(HTTP *http, const char *proxy_ip, const char *proxy_user_pass
 
 long HTTP_Request(HTTP *http)
 {
-	struct curl_slist *cookies = NULL;
 	long response_code;
 	CURLcode error;
 	char *url;
+	struct curl_slist *cookies = NULL;
 
 
 	curl_easy_getinfo(http->curl, CURLINFO_EFFECTIVE_URL, &url);

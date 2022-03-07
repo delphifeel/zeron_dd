@@ -34,7 +34,7 @@ static bool _ParseLine(char line[], Proxy *proxy)
 	return true;
 }
 
-bool Proxy_Load(Proxy **proxy_list_ptr, int *proxy_list_size)
+bool Proxy_Load(const char *file_path, Proxy **proxy_list_ptr, int *proxy_list_size)
 {
 	FILE *fp;
 	int c;
@@ -47,7 +47,7 @@ bool Proxy_Load(Proxy **proxy_list_ptr, int *proxy_list_size)
     unsigned int proxy_list_cap = DEFAULT_LIST_SIZE;
 
 
-	fp = fopen("../proxy_parser/proxies.txt", "r");
+	fp = fopen(file_path, "r");
 	if (fp == NULL)
 	{
 		printf("Cant open proxy file\n");
