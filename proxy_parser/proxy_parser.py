@@ -1,20 +1,23 @@
 import requests
 import json
 
+# MAIN_URL = "https://gitlab.com/cto.endel/atack_hosts/-/raw/master/hosts.json"
+MAIN_URL = "https://hutin-puy.nadom.app/"
+
 def main():
-	response = requests.get("https://gitlab.com/cto.endel/atack_hosts/-/raw/master/hosts.json")
+	response = requests.get(MAIN_URL)
 	api_list = response.json()
 	proxy_file_content = ""
 	for api in api_list:
 		api_json = None
 		target_site = "https://sb.ru"
 
-		try:
-			api_resp = requests.get(api, timeout=15)
-			api_json = api_resp.json()
-		except:
-			print("%s UNAVAILABLE" % (api))
-			continue
+		#try:
+		#	api_resp = requests.get(api, timeout=15)
+		#	api_json = api_resp.json()
+		#except:
+		#	print("%s UNAVAILABLE" % (api))
+		#	continue
 
 		if "proxy" not in api_json:
 			continue

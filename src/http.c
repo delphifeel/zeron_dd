@@ -108,7 +108,10 @@ bool HTTP_SetURL(HTTP *http, const char *url)
 bool HTTP_SetProxy(HTTP *http, const char *proxy_ip, const char *proxy_user_password)
 {
 	curl_easy_setopt(http->curl, CURLOPT_PROXY, proxy_ip);
-	curl_easy_setopt(http->curl, CURLOPT_PROXYUSERPWD, proxy_user_password);
+	if (strlen(proxy_user_password) > 0)
+	{
+		curl_easy_setopt(http->curl, CURLOPT_PROXYUSERPWD, proxy_user_password);
+	}
 	return true;
 }
 

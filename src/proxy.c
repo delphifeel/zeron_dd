@@ -26,6 +26,7 @@ static bool _ParseTarget(char **target_site_ptr, int target_site_size)
 	}
 
 	*target_site_ptr = result;
+	return true;
 }
 
 static bool _ParseLine(char line[], Proxy *proxy)
@@ -52,7 +53,10 @@ static bool _ParseLine(char line[], Proxy *proxy)
 	_ParseTarget(&target_site, strlen(target_site));
 
 	strcpy(proxy->ip, ip);
-	strcpy(proxy->user_password, user_password);
+	if (strcmp(user_password, " ") != 0)
+	{
+		strcpy(proxy->user_password, user_password);
+	}
 	strcpy(proxy->target_site, target_site);
 
 	return true;
