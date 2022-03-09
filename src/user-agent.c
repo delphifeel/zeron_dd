@@ -507,7 +507,7 @@ static char *_user_agents[500] = {
 
 static int _rand_init = 0;
 
-const char *UserAgent_SelectRandom()
+const char *UserAgent_SelectRandom(void)
 {
 	if (!_rand_init)
 	{

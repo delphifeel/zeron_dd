@@ -31,7 +31,7 @@ static void _AddHeader(const char *key, const char *value)
 	_headers_list = curl_slist_append(_headers_list, buffer);
 }
 
-static void _InitHeaders()
+static void _InitHeaders(void)
 {
 	_AddHeader("Content-Type", "text/plain;charset=UTF-8");
 	_AddHeader("cf-visitor", "https");
@@ -43,13 +43,13 @@ static void _InitHeaders()
 	_AddHeader("Accept-Encoding", "gzip, deflate, br");
 }
 
-void HTTP_ModuleInit()
+void HTTP_ModuleInit(void)
 {
 	curl_global_init(CURL_GLOBAL_ALL);
 	_InitHeaders();
 }
 
-void HTTP_ModuleFree()
+void HTTP_ModuleFree(void)
 {
 	curl_slist_free_all(_headers_list);
 }
@@ -74,7 +74,7 @@ bool HTTP_Create(HTTP **http_ptr, unsigned int id)
 	curl_easy_setopt(curl, CURLOPT_HTTPPROXYTUNNEL, true);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _WriteFunc);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, NULL);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, _headers_list);

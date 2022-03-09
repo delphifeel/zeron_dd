@@ -13,6 +13,8 @@ static unsigned char 	*proxy_failed = NULL;
 static char 			*fixed_target_site = NULL;
 static time_t 			time_now;
 static unsigned int 	update_proxy_interval = 20;
+static char 			*proxies_file_path = "proxies.txt";
+static bool 			proxies_file_changed = false;
 
 static void *task(void *userdata);
 static void _PrepareProxies(void);
@@ -96,7 +98,7 @@ static void _PrepareProxies(void);
 
 	static void threads_func(unsigned int threads_count)
 	{
-		int i;
+		unsigned int i;
 		pthread_t threads_list[threads_count];
 
 
@@ -136,7 +138,8 @@ static void *task(void *userdata)
 	while (1)
 	{
 		MUTEX(
-			if ((time(0) - time_now) > update_proxy_interval)
+			if ((proxies_file_changed == false) &&
+				((time(0) - time_now) > update_proxy_interval))
 			{
 				time_now = time(0);
 				thread_proxy_index = 0;
@@ -183,7 +186,6 @@ static void *task(void *userdata)
 	return NULL;
 }
 
-static const char *proxies_file_path = "proxies.txt";
 static void _PrepareProxies(void)
 {
 	int process_status;
@@ -199,12 +201,16 @@ static void _PrepareProxies(void)
 	}
 
 	printf("Loading new proxies\n");
-	process_status = run_proxy_parser();
-	printf("Process status: %d\n", process_status);
+	if (proxies_file_changed == false)
+	{
+		process_status = run_proxy_parser();
+		printf("Process status: %d\n", process_status);
+	}
+	
 	if (!Proxy_Load(proxies_file_path, &proxy_list, &proxy_list_size))
 	{
 		printf("Proxy_Load error\n");
-		return 1;
+		return;
 	}
 	printf("Load %d proxies\n", proxy_list_size);
 	proxy_failed = calloc(proxy_list_size, sizeof(*proxy_failed));
@@ -212,13 +218,16 @@ static void _PrepareProxies(void)
 
 int main(int argc, char **argv)
 {
-	int i;
 	unsigned int threads_count;
 
 
 	if (argc < 2)
 	{
-		printf("Usage: ZeronDD.exe [threads_count] [optional][update_proxy_interval] [optional][fixed_target] \n");
+		printf(
+			"Usage: ZeronDD.exe "
+			"[threads_count] [?update_proxy_interval] "
+			"[?fixed_target] [?proxy_file]\n"
+		);
 		return 0;
 	}
 
@@ -230,6 +239,16 @@ int main(int argc, char **argv)
 		if (argc > 3)
 		{
 			fixed_target_site = argv[3];
+			if (strlen(fixed_target_site) == 0)
+			{
+				fixed_target_site = NULL;
+			}
+
+			if (argc > 4)
+			{
+				proxies_file_changed = true;
+				proxies_file_path = argv[4];
+			}
 		}
 	}
 

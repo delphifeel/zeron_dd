@@ -10,8 +10,8 @@ typedef struct HTTP
 	bool is_verbose;
 } HTTP;
 
-void HTTP_ModuleInit();
-void HTTP_ModuleFree();
+void HTTP_ModuleInit(void);
+void HTTP_ModuleFree(void);
 
 bool HTTP_Create(HTTP **http_ptr, unsigned int id);
 void HTTP_SetVerbose(HTTP *http, bool is_verbose);
