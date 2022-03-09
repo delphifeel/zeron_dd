@@ -14,8 +14,8 @@ static char 			*fixed_target_site = NULL;
 static time_t 			time_now;
 static unsigned int 	update_proxy_interval = 20;
 
-void *task(void *userdata);
-void _PrepareProxies(void);
+static void *task(void *userdata);
+static void _PrepareProxies(void);
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -118,7 +118,7 @@ void _PrepareProxies(void);
 
 #endif
 
-void *task(void *userdata)
+static void *task(void *userdata)
 {
 	Proxy *proxy;
 	HTTP *http;
